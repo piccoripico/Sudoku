@@ -369,24 +369,94 @@
       return null;
     }
 
-    function countSolutions(board, limit = 2) {
-      const empty = findEmpty(board);
-      if (!empty) return 1;
-      const [r, c] = empty;
-      let solutions = 0;
-      for (let value = 1; value <= 9; value++) {
-        if (isSafe(board, r, c, value)) {
-          board[r][c] = value;
-          solutions += countSolutions(board, limit);
-          if (solutions >= limit) {
-            board[r][c] = 0;
-            return solutions;
+    function countSolutions(board, limit = 2, budget = null) {
+      const rowMask = Array(9).fill(0);
+      const colMask = Array(9).fill(0);
+      const boxMask = Array(9).fill(0);
+      const empties = [];
+
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const value = board[r][c];
+          if (value === 0) {
+            empties.push([r, c]);
+            continue;
           }
-          board[r][c] = 0;
+          const bit = 1 << value;
+          const box = 3 * Math.floor(r / 3) + Math.floor(c / 3);
+          rowMask[r] |= bit;
+          colMask[c] |= bit;
+          boxMask[box] |= bit;
         }
       }
-      board[r][c] = 0;
-      return solutions;
+
+      function popcount(n) {
+        let count = 0;
+        while (n) {
+          n &= n - 1;
+          count += 1;
+        }
+        return count;
+      }
+
+      function solve(index = 0) {
+        if (budget) {
+          budget.calls += 1;
+          if (budget.calls > budget.maxCalls) return 0;
+        }
+
+        let bestIndex = -1;
+        let bestCandidates = 0;
+        let bestCount = 10;
+
+        for (let i = index; i < empties.length; i++) {
+          const [r, c] = empties[i];
+          if (board[r][c] !== 0) continue;
+          const box = 3 * Math.floor(r / 3) + Math.floor(c / 3);
+          const used = rowMask[r] | colMask[c] | boxMask[box];
+          const candidates = (~used) & 0x3FE;
+          const count = popcount(candidates);
+          if (count === 0) return 0;
+          if (count < bestCount) {
+            bestCount = count;
+            bestCandidates = candidates;
+            bestIndex = i;
+            if (count === 1) break;
+          }
+        }
+
+        if (bestIndex === -1) return 1;
+
+        [empties[index], empties[bestIndex]] = [empties[bestIndex], empties[index]];
+        const [r, c] = empties[index];
+        const box = 3 * Math.floor(r / 3) + Math.floor(c / 3);
+
+        let solutions = 0;
+        for (let value = 1; value <= 9; value++) {
+          const bit = 1 << value;
+          if ((bestCandidates & bit) === 0) continue;
+
+          board[r][c] = value;
+          rowMask[r] |= bit;
+          colMask[c] |= bit;
+          boxMask[box] |= bit;
+
+          solutions += solve(index + 1);
+
+          rowMask[r] &= ~bit;
+          colMask[c] &= ~bit;
+          boxMask[box] &= ~bit;
+          board[r][c] = 0;
+
+          if (solutions >= limit) break;
+          if (budget && budget.calls > budget.maxCalls) break;
+        }
+
+        [empties[index], empties[bestIndex]] = [empties[bestIndex], empties[index]];
+        return solutions;
+      }
+
+      return solve(0);
     }
 
     function generateFullBoard(rand) {
@@ -420,10 +490,14 @@
 
     function generatePuzzle(clues, seedValue) {
       const clueCount = clampClues(clues);
-      const maxAttempts = clueCount <= 24 ? 24 : 1;
+      const maxAttempts = clueCount <= 18 ? 8 : clueCount <= 22 ? 5 : clueCount <= 24 ? 3 : 1;
+      const totalTimeBudgetMs = clueCount <= 22 ? 2200 : clueCount <= 24 ? 1400 : 700;
+      const startedAt = performance.now();
       let best = null;
 
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (performance.now() - startedAt > totalTimeBudgetMs && best) break;
+
         const rand = createRng(`${seedValue}:${attempt}`);
         const solutionBoard = generateFullBoard(rand);
         const puzzleBoard = solutionBoard.map(row => [...row]);
@@ -434,12 +508,25 @@
         shuffle(cells, rand);
 
         let removed = 0;
-        for (const [r, c] of cells) {
+        const uniquenessBudget = {
+          calls: 0,
+          maxCalls: clueCount <= 22 ? 70000 : clueCount <= 24 ? 45000 : 22000
+        };
+
+        for (let i = 0; i < cells.length; i++) {
+          const [r, c] = cells[i];
           if (81 - removed <= clueCount) break;
+          if (performance.now() - startedAt > totalTimeBudgetMs && best) break;
+          if (uniquenessBudget.calls > uniquenessBudget.maxCalls) break;
+
+          const remainingCells = cells.length - i;
+          const neededRemovals = (81 - removed) - clueCount;
+          if (remainingCells < neededRemovals) break;
+
           const backup = puzzleBoard[r][c];
           puzzleBoard[r][c] = 0;
           const copy = puzzleBoard.map(row => [...row]);
-          if (countSolutions(copy) !== 1) {
+          if (countSolutions(copy, 2, uniquenessBudget) !== 1) {
             puzzleBoard[r][c] = backup;
           } else {
             removed += 1;
