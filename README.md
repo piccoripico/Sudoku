@@ -1,71 +1,41 @@
-# Sudoku (Single HTML Concept)
+# Sudoku (数独)
 
-> **開発コンセプト / Development Concept**  
-> このプロジェクトは、**`Sudoku.html` 単体を開くだけでローカル環境で遊べる**ことを最優先に設計しています。  
-> This project is designed with one priority: **you can play locally by simply opening `Sudoku.html`**.
+**インターネットもインストールも不要。`Sudoku.html` を直接ブラウザで開けば、そのままプレイできます。**
 
 ---
 
 ## 日本語
 
 ### 概要
-この Sudoku は、インストール不要・ビルド不要・サーバー不要で動く、ブラウザ向けの数独ゲームです。  
-`Sudoku.html` を直接ブラウザで開けば、そのままプレイできます。
+ブラウザ向けの数独ゲームです。  
 
-### 起動方法（ローカル）
-1. このリポジトリをダウンロードします。
-2. `Sudoku.html` をダブルクリック、またはブラウザにドラッグ＆ドロップします。
-3. すぐにプレイ開始できます。
+### はじめかた
+1. `Sudoku.html` をダウンロードします。
+2. ダウンロードした `Sudoku.html` をダブルクリックします。（またはブラウザにドラッグ＆ドロップします。）
+3. すぐに数独をはじめられます。
 
-### 操作方法
+### 操作方法（マウス）
+- **数字入力**: 数字パッドの `1`～`9` をクリック
+- **消去**: 数字パッドの `消去` をクリック
+- **セル移動**: 盤面の入力したいマスをクリック
+- **メモ切替**: 数字パッドの `✏️メモ` ボタンをクリック
+- **赤色メモ**: メモモード時に数字パッドの `1`～`9` を**右クリック**
+- **1つ戻る / 1つ進める**: 数字パッドの `↩️1つ戻る` / `↪️1つ進める` をクリック
+
+### 操作方法（キーボード）
 - **数字入力**: `1`〜`9`
 - **消去**: `0` / `Backspace` / `Delete`
 - **セル移動**: 矢印キー
-- **メモ切替**: `Enter`（✏️ボタンでも切替可）
-- **Undo / Redo**: `Ctrl+Z` / `Ctrl+Y`（`Ctrl+Shift+Z`）
+- **メモ切替**: `Enter`
+- **赤色メモ**: `Shift+1`〜`9`
+- **1つ戻る / 1つ進める**: `Ctrl+Z` / `Ctrl+Y`（`Ctrl+Shift+Z`）
 
 ### 主な機能
-- 新しい盤面の生成（ヒント数・シード指定）
-- タイマー計測
-- メモ入力
-- 重複警告
-- 完成ハイライト
-- ヒント / リセット / 解答表示
-
-### このプロジェクトが向いているケース
-- 「HTML 1ファイルで完結するサンプル」を探している
-- 教育用途や配布用途で、実行手順を最小化したい
-- オフラインでも手軽に数独を遊びたい
-
----
-
-## English
-
-### Overview
-This Sudoku game runs directly in your browser with **no installation, no build process, and no local server**.  
-Just open `Sudoku.html` and start playing.
-
-### How to Run (Local)
-1. Download this repository.
-2. Open `Sudoku.html` by double-clicking it, or drag & drop it into your browser.
-3. Play immediately.
-
-### Controls
-- **Input numbers**: `1` to `9`
-- **Clear a cell**: `0` / `Backspace` / `Delete`
-- **Move selection**: Arrow keys
-- **Toggle notes mode**: `Enter` (or the ✏️ button)
-- **Undo / Redo**: `Ctrl+Z` / `Ctrl+Y` (`Ctrl+Shift+Z`)
-
-### Key Features
-- Generate new puzzles (hint count / seed)
-- Timer tracking
-- Pencil notes
-- Duplicate conflict warning
-- Completion highlight
-- Hint / Reset / Show solution
-
-### Best For
-- People looking for a **single-file HTML Sudoku** example
-- Educational or distribution use cases with minimal setup
-- Quick offline play without any tooling
+- **ヒント数**: 新しい盤面に表示されるヒント数を指定できます。
+- **シード**: 同じシード値を入力すると、同じ盤面を生成できます。（シード値の入力がなければランダム）
+- **タイマー**: 盤面を作成してから解答するまでの時間を計測します。
+- **重複数字の警告**: 重複する数字をハイライト表示します。
+- **完成数字の強調**: 完成した数字をハイライト表示します。
+- **最初の状態に戻す**: 盤面を最初の状態にリセットします。
+- **ヒントを埋める**: プレイ中にヒントを増やせます。（左上の空欄から埋めていきます。）
+- **答えを表示**: 解答を表示します。

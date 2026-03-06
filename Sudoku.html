@@ -419,30 +419,63 @@
     }
 
     function generatePuzzle(clues, seedValue) {
-      const rand = createRng(seedValue);
       const clueCount = clampClues(clues);
-      const solutionBoard = generateFullBoard(rand);
-      const puzzleBoard = solutionBoard.map(row => [...row]);
-      const cells = [];
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) cells.push([r, c]);
-      }
-      shuffle(cells, rand);
+      const maxAttempts = clueCount <= 24 ? 24 : 1;
+      let best = null;
 
-      let removed = 0;
-      for (const [r, c] of cells) {
-        if (81 - removed <= clueCount) break;
-        const backup = puzzleBoard[r][c];
-        puzzleBoard[r][c] = 0;
-        const copy = puzzleBoard.map(row => [...row]);
-        if (countSolutions(copy) !== 1) {
-          puzzleBoard[r][c] = backup;
-        } else {
-          removed += 1;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const rand = createRng(`${seedValue}:${attempt}`);
+        const solutionBoard = generateFullBoard(rand);
+        const puzzleBoard = solutionBoard.map(row => [...row]);
+        const cells = [];
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) cells.push([r, c]);
+        }
+        shuffle(cells, rand);
+
+        let removed = 0;
+        for (const [r, c] of cells) {
+          if (81 - removed <= clueCount) break;
+          const backup = puzzleBoard[r][c];
+          puzzleBoard[r][c] = 0;
+          const copy = puzzleBoard.map(row => [...row]);
+          if (countSolutions(copy) !== 1) {
+            puzzleBoard[r][c] = backup;
+          } else {
+            removed += 1;
+          }
+        }
+
+        const actualClueCount = 81 - removed;
+        if (!best || actualClueCount < best.actualClueCount) {
+          best = { puzzleBoard, solutionBoard, actualClueCount };
+        }
+        if (actualClueCount === clueCount) {
+          return { puzzleBoard, solutionBoard, actualClueCount };
         }
       }
 
-      return { puzzleBoard, solutionBoard };
+      const forcedRand = createRng(`${seedValue}:forced`);
+      const forcedPuzzleBoard = best.puzzleBoard.map(row => [...row]);
+      const filledCells = [];
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (forcedPuzzleBoard[r][c] !== 0) filledCells.push([r, c]);
+        }
+      }
+      shuffle(filledCells, forcedRand);
+      let currentClues = best.actualClueCount;
+      for (const [r, c] of filledCells) {
+        if (currentClues <= clueCount) break;
+        forcedPuzzleBoard[r][c] = 0;
+        currentClues -= 1;
+      }
+
+      return {
+        puzzleBoard: forcedPuzzleBoard,
+        solutionBoard: best.solutionBoard,
+        actualClueCount: currentClues
+      };
     }
 
     function cellKey(r, c) { return `${r}-${c}`; }
@@ -580,10 +613,9 @@
           noteMap.clear();
         } else if (highlightNote) {
           const existing = noteMap.get(value);
-          const newHighlighted = !(existing && existing.highlighted);
-          if (existing && existing.highlighted === newHighlighted) return;
+          if (existing && existing.highlighted) return;
           recordStateForUndo();
-          noteMap.set(value, { highlighted: newHighlighted });
+          noteMap.set(value, { highlighted: true });
         } else {
           const existing = noteMap.get(value);
           if (existing) {
@@ -713,7 +745,7 @@
     function updateStats() {
       const hintText = `ヒント使用: ${hintCount}回`;
       const solutionText = `解答表示: ${solutionRevealed ? 'あり' : 'なし'}`;
-      const clueText = `選択ヒント数: ${selectedClueCount}`;
+      const clueText = `実ヒント数: ${selectedClueCount}`;
       const seedText = `シード: ${selectedSeedDisplay}`;
       statsEl.textContent = `${hintText} / ${solutionText} / ${clueText} / ${seedText}`;
     }
@@ -771,10 +803,10 @@
       const seedValue = seedWasRandom ? Math.floor(Math.random() * 1_000_000_000).toString() : seedValueRaw;
       setStatus('生成中...');
 
-      const { puzzleBoard, solutionBoard } = generatePuzzle(clues, seedValue);
+      const { puzzleBoard, solutionBoard, actualClueCount } = generatePuzzle(clues, seedValue);
       puzzle = puzzleBoard;
       solution = solutionBoard;
-      selectedClueCount = clues;
+      selectedClueCount = actualClueCount;
       selectedSeedDisplay = seedWasRandom ? `ランダム(${seedValue})` : seedValue;
       solutionDigitMap = new Map();
       for (let num = 1; num <= 9; num++) solutionDigitMap.set(num, []);
