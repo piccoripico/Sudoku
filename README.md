@@ -1,7 +1,9 @@
 # Sudoku (数独)
 
-- **No internet connection or installation required. Just open `Sudoku.html` directly in your browser and start playing right away.**
-- **インターネットもインストールも不要。`Sudoku.html` を直接ブラウザで開けば、そのままプレイできます。**
+### No internet connection or installation required
+Just open `Sudoku.html` directly in your browser and start playing right away.
+### インターネットもインストールも不要
+`Sudoku.html` を直接ブラウザで開けば、そのままプレイできます。
 
 ---
 
